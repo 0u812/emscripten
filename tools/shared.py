@@ -305,7 +305,7 @@ def check_fastcomp():
 
     # look for a source tree under the llvm binary directory. if there is one, look for emscripten-version.txt files
     seen = False
-    d = os.path.dirname(LLVM_COMPILER)
+    d = LLVM_SRC_ROOT
     while d != os.path.dirname(d):
       # look for version file in llvm repo, making sure not to mistake the emscripten repo for it
       if os.path.exists(os.path.join(d, 'emscripten-version.txt')) and not os.path.abspath(d) == os.path.abspath(path_from_root()):
@@ -542,6 +542,7 @@ LLVM_DIS=os.path.expanduser(build_llvm_tool_path('llvm-dis'))
 LLVM_NM=os.path.expanduser(build_llvm_tool_path('llvm-nm'))
 LLVM_INTERPRETER=os.path.expanduser(build_llvm_tool_path('lli'))
 LLVM_COMPILER=os.path.expanduser(build_llvm_tool_path('llc'))
+LLVM_SRC_ROOT='/home/poltergeist/home/etc/src/emscripten/fastcomp'
 
 EMSCRIPTEN = path_from_root('emscripten.py')
 DEMANGLER = path_from_root('third_party', 'demangler.py')
