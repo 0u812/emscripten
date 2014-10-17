@@ -294,7 +294,7 @@ def render_function(class_name, func_name, sigs, return_type, non_pointer, copy,
       return_postfix += ', &temp)'
 
     if return_type == 'String':
-      return_postfix += '->c_str()'
+      return_postfix += '.c_str()'
 
     c_return_type = type_to_c(return_type)
     mid_c += [r'''
