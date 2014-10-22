@@ -148,6 +148,17 @@ void array_bounds_check(const int array_size, const int array_idx) {
 
 C_FLOATS = ['float', 'double']
 
+def resolve_enum(name, enum):
+  resolved_name = name
+  for value in enum.values():
+    symbols = value.split('::')
+    if len(symbols) == 2:
+      [namespace, identifier] = symbols
+      if not namespace in interfaces:
+        resolved_name = namespace + '::' + name.split('__idl__')[1]
+
+  return resolved_name
+
 def type_to_c(t, non_pointing=False):
   #print 'to c ', t
   t = t.replace(' (Wrapper)', '')
@@ -175,6 +186,8 @@ def type_to_c(t, non_pointing=False):
     return 'bool'
   elif t == 'Any' or t == 'VoidPtr':
     return 'void*'
+  elif t in enums:
+    return resolve_enum(t, enums[t])
   elif t in interfaces:
     return (interfaces[t].getExtendedAttribute('Prefix') or [''])[0] + t + ('' if non_pointing else '*')
   else:
@@ -473,10 +486,9 @@ for name, enum in enums.iteritems():
   mid_js += ['\n// ' + name + '\n']
   for value in enum.values():
     function_id = "%s_%s" % (name, value.split('::')[-1])
-    mid_c += [r'''%s EMSCRIPTEN_KEEPALIVE emscripten_enum_%s() {
-  return %s;
-}
-''' % (name, function_id, value)]
+
+    resolved_name = name
+
     symbols = value.split('::')
     if len(symbols) == 1:
       identifier = symbols[0]
@@ -488,10 +500,17 @@ for name, enum in enums.iteritems():
         mid_js += ["Module['%s']['%s'] = _emscripten_enum_%s();\n" % \
                   (namespace, identifier, function_id)]
       else:
+        resolved_name = namespace + '::' + name.split('__idl__')[1]
         # namespace is a namespace, so the enums get collapsed into the top level namespace.
         mid_js += ["Module['%s'] = _emscripten_enum_%s();\n" % (identifier, function_id)]
     else:
       throw ("Illegal enum value %s" % value)
+
+    # write the function header now that we know the scope-resolved symbol name
+    mid_c += [r'''%s EMSCRIPTEN_KEEPALIVE emscripten_enum_%s() {
+  return %s;
+}
+''' % (resolved_name, function_id, value)]
 
 mid_c += ['\n}\n\n']
 mid_js += ['\n']
