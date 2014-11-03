@@ -178,6 +178,8 @@ def type_to_c(t, non_pointing=False):
     return 'void'
   elif t == 'String':
     return 'char*'
+  elif t == 'ByteString':
+    return 'const char*'
   elif t == 'Float':
     return 'float'
   elif t == 'Double':
@@ -213,7 +215,7 @@ def type_to_cdec(raw):
     return ret
   return ret + '*'
 
-def render_function(class_name, func_name, sigs, return_type, non_pointer, copy, operator, constructor, func_scope, call_content=None, const=False):
+def render_function(class_name, func_name, sigs, return_type, non_pointer, copy, raw, operator, constructor, func_scope, call_content=None, const=False):
   global mid_c, mid_js, js_impl_methods
 
   #print 'renderfunc', class_name, func_name, sigs, return_type, constructor
@@ -404,6 +406,7 @@ for name in names:
                     m.identifier.name, sigs, return_type,
                     m.getExtendedAttribute('Ref'),
                     m.getExtendedAttribute('Value'),
+                    m.getExtendedAttribute('Raw'),
                     (m.getExtendedAttribute('Operator') or [None])[0],
                     constructor,
                     func_scope=m.parentScope.identifier.name,
@@ -440,6 +443,7 @@ for name in names:
                     None,
                     None,
                     None,
+                    None,
                     False,
                     func_scope=interface,
                     call_content=get_call_content,
@@ -454,6 +458,7 @@ for name in names:
                       None,
                       None,
                       None,
+                    None,
                       False,
                       func_scope=interface,
                       call_content=set_call_content,
@@ -464,6 +469,7 @@ for name in names:
   %s.prototype['__destroy__'] = ''' % name]
     render_function(name,
                     '__destroy__', { 0: [] }, 'Void',
+                    None,
                     None,
                     None,
                     None,
