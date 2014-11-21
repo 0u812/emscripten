@@ -97,6 +97,15 @@ function wrapPointer(ptr, __class__) {
 }
 Module['wrapPointer'] = wrapPointer;
 
+function idl_wrapBool(val) {
+  if(val == 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+Module['idl_wrapBool'] = idl_wrapBool;
+
 function castObject(obj, __class__) {
   return wrapPointer(obj.ptr, __class__);
 }
@@ -148,6 +157,11 @@ void array_bounds_check(const int array_size, const int array_idx) {
 
 C_FLOATS = ['float', 'double']
 
+def extract_enum_symbol_name(name):
+  while '__idl__' in name:
+    name = name.split('__idl__')[1]
+  return name
+
 def resolve_enum(name, enum):
   resolved_name = name
   for value in enum.values():
@@ -155,7 +169,7 @@ def resolve_enum(name, enum):
     if len(symbols) == 2:
       [namespace, identifier] = symbols
       if not namespace in interfaces:
-        resolved_name = namespace + '::' + name.split('__idl__')[1]
+        resolved_name = namespace + '::' + extract_enum_symbol_name(name)
 
   return resolved_name
 
@@ -236,8 +250,11 @@ def render_function(class_name, func_name, sigs, return_type, non_pointer, copy,
     if return_type in interfaces:
       call_prefix += 'wrapPointer('
       call_postfix += ', ' + return_type + ')'
-    elif return_type == 'String':
+    elif return_type == 'String' or return_type == 'ByteString':
       call_prefix += 'Pointer_stringify('
+      call_postfix += ')'
+    elif return_type == 'Boolean':
+      call_prefix += 'idl_wrapBool('
       call_postfix += ')'
 
   args = ['arg%d' % i for i in range(max_args)]
@@ -499,12 +516,13 @@ for name, enum in enums.iteritems():
     if len(symbols) == 1:
       identifier = symbols[0]
       mid_js += ["Module['%s'] = _emscripten_enum_%s();\n" % (identifier, function_id)]
-    elif len(symbols) == 2:
-      [namespace, identifier] = symbols
+    elif len(symbols) >= 2:
+      [namespace, identifier] = symbols[-2:]
       if namespace in interfaces:
         # namespace is a class
         mid_js += ["Module['%s']['%s'] = _emscripten_enum_%s();\n" % \
                   (namespace, identifier, function_id)]
+        resolved_name = name.replace('__idl__', '::')
       else:
         resolved_name = namespace + '::' + name.split('__idl__')[1]
         # namespace is a namespace, so the enums get collapsed into the top level namespace.
