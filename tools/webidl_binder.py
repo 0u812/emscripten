@@ -163,14 +163,7 @@ def extract_enum_symbol_name(name):
   return name
 
 def resolve_enum(name, enum):
-  resolved_name = name
-  for value in enum.values():
-    symbols = value.split('::')
-    if len(symbols) == 2:
-      [namespace, identifier] = symbols
-      if not namespace in interfaces:
-        resolved_name = namespace + '::' + extract_enum_symbol_name(name)
-
+  resolved_name = name.replace('__idl__', '::')
   return resolved_name
 
 def type_to_c(t, non_pointing=False):
