@@ -145,6 +145,8 @@ function ensureString(value) {
 ''']
 
 mid_c += ['''
+#include <stdlib.h>
+
 // Not using size_t for array indices as the values used by the javascript code are signed.
 void array_bounds_check(const int array_size, const int array_idx) {
   if (array_idx < 0 || array_idx >= array_size) {
@@ -152,6 +154,13 @@ void array_bounds_check(const int array_size, const int array_idx) {
       throw 'Array index ' + $0 + ' out of bounds: [0,' + $1 + ')';
     }, array_idx, array_size);
   }
+}
+
+char* cstr_clone(const char* src) {
+  size_t n = (strlen(src)+1)*sizeof(char);
+  char* dst = (char*)malloc(n);
+  memcpy(dst, src, n);
+  return dst;
 }
 ''']
 
@@ -319,8 +328,8 @@ def render_function(class_name, func_name, sigs, return_type, non_pointer, copy,
       return_postfix += ', &temp)'
 
     if return_type == 'String':
-      return_prefix += '(char*)'
-      return_postfix += '.c_str()'
+      return_prefix += '(char*)cstr_clone('
+      return_postfix += '.c_str())'
 
     c_return_type = type_to_c(return_type)
     mid_c += [r'''
